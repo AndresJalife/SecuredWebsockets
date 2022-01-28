@@ -40,13 +40,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManagerBean(), tokenCreatorService);
         customAuthenticationFilter.setFilterProcessesUrl("/login");
-//        http.authorizeRequests().antMatchers("/**").permitAll();
-//        http.authorizeRequests().anyRequest().permitAll();
         http.csrf().disable();
         http.cors();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeRequests().antMatchers("/login/**", "/ws/**").permitAll();
-        http.authorizeRequests().antMatchers(POST, "/api/role").hasAnyAuthority("ROLE_USER");
+        http.authorizeRequests().antMatchers("/login").permitAll();
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new CustomAuthorizationFilter(securityWord), UsernamePasswordAuthenticationFilter.class);
@@ -55,11 +52,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowCredentials(true);
-//        configuration.addAllowedOrigin("http://localhost");
-//        configuration.setAllowedMethods(Arrays.asList("GET", "POST"));
-//        source.registerCorsConfiguration("/**", configuration);
         source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
         return source;
     }
