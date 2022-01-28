@@ -1,8 +1,8 @@
-package Security;
+package com.communication.securedWebsockets.security;
 
-import Security.filter.CustomAuthenticationFilter;
-import Security.filter.CustomAuthorizationFilter;
-import Security.service.TokenCreatorService.TokenService;
+import com.communication.securedWebsockets.security.filter.CustomAuthenticationFilter;
+import com.communication.securedWebsockets.security.filter.CustomAuthorizationFilter;
+import com.communication.securedWebsockets.security.service.TokenCreatorService.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import static org.springframework.http.HttpMethod.POST;
 
 @Configuration @EnableWebSecurity @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -37,26 +39,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManagerBean(), tokenCreatorService);
-        customAuthenticationFilter.setFilterProcessesUrl("/api/login");
+        customAuthenticationFilter.setFilterProcessesUrl("/login");
+//        http.authorizeRequests().antMatchers("/**").permitAll();
+//        http.authorizeRequests().anyRequest().permitAll();
         http.csrf().disable();
         http.cors();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.authorizeRequests().antMatchers("/login/**").permitAll();
+        http.authorizeRequests().antMatchers(POST, "/api/role").hasAnyAuthority("ROLE_USER");
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new CustomAuthorizationFilter(securityWord), UsernamePasswordAuthenticationFilter.class);
     }
 
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowCredentials(true);
-//        configuration.addAllowedOrigin("http://localhost");
-//        configuration.setAllowedMethods(Arrays.asList("GET", "POST"));
-//        source.registerCorsConfiguration("/**", configuration);
-        source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
-        return source;
-    }
+//    @Bean
+//    CorsConfigurationSource corsConfigurationSource() {
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+////        CorsConfiguration configuration = new CorsConfiguration();
+////        configuration.setAllowCredentials(true);
+////        configuration.addAllowedOrigin("http://localhost");
+////        configuration.setAllowedMethods(Arrays.asList("GET", "POST"));
+////        source.registerCorsConfiguration("/**", configuration);
+//        source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+//        return source;
+//    }
 
     @Bean
     @Override

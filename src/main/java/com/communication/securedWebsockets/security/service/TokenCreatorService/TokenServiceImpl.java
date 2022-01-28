@@ -1,4 +1,4 @@
-package Security.service.TokenCreatorService;
+package com.communication.securedWebsockets.security.service.TokenCreatorService;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -18,20 +18,26 @@ import java.util.Map;
 public class TokenServiceImpl implements TokenService {
     private Algorithm algorithm;
 
+    @Value("${security.token.access.expiration}")
+    public Integer accessTokenExpiration;
+
+    @Value("${security.token.refresh.expiration}")
+    public Integer refreshTokenExpiration;
+
     @Value("${spring.security.algorithm.seceretword}")
     public String securityWord;
 
     public Map<String, String> createTokens(String username, String url) {
         algorithm = Algorithm.HMAC256(securityWord.getBytes());
         Map<String, String> tokens = new HashMap<>();
-        tokens.put("access_token", createTokenMap(username, url, 60000));
-        tokens.put("refresh_token", createTokenMap(username, url, 100000));
+        tokens.put("access_token", createTokenMap(username, url, accessTokenExpiration));
+        tokens.put("refresh_token", createTokenMap(username, url, refreshTokenExpiration));
         return tokens;
     }
 
     /**
      * @param expiration in milis
-     * @return Map<String, Object> with the token
+     * @return String: the token
      */
     private String createTokenMap(String username, String url, Integer expiration) {
         return JWT.create()

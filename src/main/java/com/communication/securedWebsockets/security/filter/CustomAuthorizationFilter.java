@@ -1,4 +1,4 @@
-package Security.filter;
+package com.communication.securedWebsockets.security.filter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -30,10 +30,14 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         String servletPath = request.getServletPath();
-        if (servletPath.contains("/ws/")){
-            authorizeWebSocketRequest(request, response, filterChain);
+        if (servletPath.equals("/login")){
+            filterChain.doFilter(request, response);
+        } else {
+            if (servletPath.contains("/ws/")){
+                authorizeWebSocketRequest(request, response, filterChain);
+            }
         }
     }
 
@@ -51,6 +55,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         JWTVerifier verifier = JWT.require(algorithm).build();
         DecodedJWT decodedJWT = verifier.verify(token);
         String username = decodedJWT.getSubject();
+        System.out.println(username);
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         filterChain.doFilter(request, response);
