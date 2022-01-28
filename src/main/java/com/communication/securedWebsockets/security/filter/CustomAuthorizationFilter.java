@@ -7,6 +7,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import javax.servlet.FilterChain;
@@ -15,8 +16,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Arrays.stream;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @Slf4j
@@ -37,11 +43,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         } else {
             if (servletPath.contains("/ws/")){
                 authorizeWebSocketRequest(request, response, filterChain);
+            } else {
+                authorizeNormalRequest(request, response, filterChain);
             }
         }
     }
 
-    public void authorizeWebSocketRequest(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
+    private void authorizeWebSocketRequest(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
         try {
             String token = request.getParameter("token");
             authenticate(request, response, filterChain, token);
@@ -50,18 +58,32 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         }
     }
 
-    public void authenticate(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String token) throws ServletException, IOException {
+    private void authorizeNormalRequest(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+        String authorizationHeader = request.getHeader(AUTHORIZATION);
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
+            try {
+                String token = authorizationHeader.substring("Bearer ".length());
+                authenticate(request, response, filterChain, token);
+            } catch (Exception exception){
+                authenticationExceptionCatched(exception, response);
+            }
+        } else {
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    private void authenticate(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain, String token) throws ServletException, IOException {
         Algorithm algorithm = Algorithm.HMAC256(secretWord.getBytes(StandardCharsets.UTF_8));
         JWTVerifier verifier = JWT.require(algorithm).build();
         DecodedJWT decodedJWT = verifier.verify(token);
         String username = decodedJWT.getSubject();
-        System.out.println(username);
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null);
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         filterChain.doFilter(request, response);
     }
 
-    public void authenticationExceptionCatched(Exception exception, HttpServletResponse response) throws IOException {
+    private void authenticationExceptionCatched(Exception exception, HttpServletResponse response) throws IOException {
         log.error("Error logging in: {}", exception.getMessage());
         Map<String, String> errors = new HashMap<>();
         errors.put("error", exception.getMessage());
@@ -72,4 +94,5 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
         new ObjectMapper().writeValue(response.getOutputStream(), errors);
     }
+
 }
