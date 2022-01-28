@@ -16,9 +16,6 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfiguration implements WebSocketConfigurer {
 
-    @Value("${spring.websockets.max.message.size}")
-    public Integer maxMessageSize;
-
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry){
         registry.addHandler(getMessageHandler(), "/ws").setAllowedOrigins("*");
