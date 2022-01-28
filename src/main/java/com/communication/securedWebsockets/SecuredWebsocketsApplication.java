@@ -2,6 +2,8 @@ package com.communication.securedWebsockets;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 public class SecuredWebsocketsApplication {
@@ -10,4 +12,8 @@ public class SecuredWebsocketsApplication {
 		SpringApplication.run(SecuredWebsocketsApplication.class, args);
 	}
 
+	@Bean
+	BCryptPasswordEncoder passwordEncoder(){
+		return new BCryptPasswordEncoder();
+	}
 }
